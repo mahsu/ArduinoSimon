@@ -21,28 +21,29 @@
 //2/19/13
 
 //DIGITAL PINS
-#define data1 0
-#define clock1 1
-#define data2 2
-#define clock2 3
-#define data3 4
-#define clock3 5
-#define data4 6
-#define clock4 7
-#define led1 8
-#define led2 9
-#define led3 10
-#define led4 11
-#define buzzer 12
+#define data1 0     //data for display 1 (leftmost) - display segments
+#define clock1 1    //clock for display 1 (leftmost) - bit pushing pulse
+#define data2 2     //data for display 2
+#define clock2 3    //clock for display 2
+#define data3 4     //data for display 3
+#define clock3 5    //data for display 3
+#define data4 6     //data for display 4 (rightmost)
+#define clock4 7    //clock for display 4 (rightmost)
+#define led1 8      //led 1 (leftmost)
+#define led2 9      //led 2
+#define led3 10     //led 3
+#define led4 11     //led 4
+#define buzzer 12   //buzzer
 
 //ANALOG PINS
-#define newgame 0
-#define ss1 1
-#define ss2 2
-#define ss3 3
-#define ss4 4
+#define newgame 0   //button to start a new game
+#define ss1 1       //button 1 (leftmost)
+#define ss2 2       //button 2
+#define ss3 3       //button 3
+#define ss4 4       //button 4 (rightmost)
+#define rndseed 5   //random seed
 
-//CHAR DEFS (COM ANODDE)
+//CHARACTER DEFINITIONS (COM ANODDE)
 byte a = B00010001;
 byte b = B11000001;
 byte d = B10000101;
@@ -67,13 +68,14 @@ byte none = B11111111;
 byte all = B00000000;
 byte dot = B11111110;
 
-void output(byte a=B11111111,byte b=B11111111, byte c=B11111111, byte d=B11111111) {//outputs 4  predefined chars to each display
+//outputs 4  predefined chars to each display
+void output(byte a=B11111111,byte b=B11111111, byte c=B11111111, byte d=B11111111) {
   //Shifting from A-H, ie LSB becomes h, MSB becomes A if LSBFIRST (74ls164)
-  //7-segment displays - first 7 bits 0=high,1=low (com anode), bit 8 arbitrary
+  //7-segment displays - first 7 bits 0=high,1=low (com anode), bit 8 is dot
   shiftOut(data1, clock1, LSBFIRST, a);
   shiftOut(data2, clock2, LSBFIRST, b);
   shiftOut(data3, clock3, LSBFIRST, c);
-  shiftOut(data4, clock4, LSBFIRST, d);  
+  shiftOut(data4, clock4, LSBFIRST, d); 
 }
 
 int cycle(int datapin=0,int clockpin=0,int i=0) {//creates a cycle pattern
@@ -104,7 +106,7 @@ void setup() {
   pinMode(led3, OUTPUT);
   pinMode(led4, OUTPUT);
   pinMode(buzzer,OUTPUT);
-  randomSeed(analogRead(5)); //random noise from disconnected
+  randomSeed(analogRead(rndseed)); //take seed from value of light dependent resistor
 }
 
 int triggered;//only allow button to be triggered once
@@ -117,26 +119,36 @@ void clear_lights() {
   digitalWrite(led4,LOW);
 }
 
+//Internal variable initialization
 int pos; //cycle position
 int state; //0=default, 1=generate array, 2=playback, 3=user input, 4=finish message, 5=lose message
 int stage; //round number
 int steps; //steps to repeat
-int maxStage = 10; //maximum rounds
 int push;//which button-led pair pushed
-int extra = 2; //how many more steps over the round number
-int sequence[200];
+
+
+//Game Settings
+int maxStage = 10; //maximum rounds
+int extra = 2; //initial steps to start with
+int sequence[200];//memory to allocate for light sequence
 
 
 void loop() {
-  if (analogRead(newgame) > 500 && triggered == 0) {//check if new game button has been pressed
-    stage=0;
+  //check if new game button has been pressed
+  if (analogRead(newgame) > 500 && triggered == 0) {
+    stage=1;//start at stage 1
     triggered = 1;
     state = 1;
-    output(n,e,w,none);
+    output(n,e,w,none);//new
     delay(2000);
   }
   
-  if (state == 0) {//pending state
+  /**
+  BEGIN STATE MACHINE
+  **/
+  
+  //game pending state
+  if (state == 0) {
     cycle(data1,clock1,pos);
     cycle(data2,clock2,pos);
     cycle(data3,clock3,pos);
@@ -145,88 +157,92 @@ void loop() {
     if (pos >5) pos = 0;
     delay(150);
   }
-  if (state == 1) {//pattern generation
-    steps=stage+extra+1;//each stage has 3 more steps
-    if (extra > 0 && sequence[0] == 0) {
+  
+  //pattern generation state
+  if (state == 1) {
+    //the game will always start with "extra" steps
+    //each round will append another step to the end
+    steps=stage+extra;
+    if (extra > 0 && sequence[0] == 0) {//first round
       for (int ii=0; ii<extra; ii++) {
-        sequence[ii]=random(1,5);//pick led to be high (1-4)
+        sequence[ii]=random(0,4);//pick led to be high (0-3)
       }
     }
-    sequence[steps-1]=random(1,5);
+    sequence[steps-1]=random(0,4);//add another to the previous pattern
     state = 2;
   }
   
-  if (state == 2) {//pattern display
-    output(r,n,d,number(stage+1));
+  //pattern display state
+  if (state == 2) {
+    output(r,n,d,number(stage));//rnd <round number>
     delay(1000);
     for (int ii=0; ii<steps; ii++) {
-      Serial.println("Step " + String(ii+1) + " : " + String(sequence[ii]));
-      digitalWrite(sequence[ii]+(led1-1),HIGH); //sequence starts at 1, therefore led1-1+1 is led1 pin
-      //delay(800-stage*45);
+      //Serial.println("Step " + String(ii+1) + " : " + String(sequence[ii]));
+      digitalWrite(sequence[ii]+(led1),HIGH); //sequence ranges 0-3, add that to led1 pin for corresponding led
       delay(800-stage*75);//progressively flash faster each round
-      digitalWrite(sequence[ii]+(led1-1),LOW);
+      digitalWrite(sequence[ii]+(led1),LOW);
       delay(200);
     }
-    state = 3;
+    state = 3;//move to user input
   }
   
-  if (state == 3) { //user input
-    output(none,g,o,none);
-      for (int ii=0; ii<steps; ii++) {
+  //user input state
+  if (state == 3) {
+    output(none,g,o,none);//go
+      for (int ii=0; ii<steps; ii++) { //cycle through each step in the sequence array
         triggered = 0;
         while (triggered == 0){
+          triggered = 1;//prevent continuous triggering
           if (analogRead(ss1)>500) {
-            push = 1;
-            triggered = 1;
-            digitalWrite(led1,HIGH);
+            push = 1;//first button pushed
+            digitalWrite(led1,HIGH);// led high
             break;
           }
           if (analogRead(ss2)>500) {
-            triggered = 1; 
             push = 2;
             digitalWrite(led2,HIGH);
             break;
           }
           if (analogRead(ss3)>500) {
             push= 3;
-            triggered = 1;
             digitalWrite(led3,HIGH);
             break;
           }
           if (analogRead(ss4)>500) {
             push = 4;
-            triggered=1;
             digitalWrite(led4,HIGH);
             break;
           }
         }
-        Serial.println("Button " + String(push) + " down");
-        while (analogRead(ss1) >500 || analogRead(ss2)>500 || analogRead(ss3)>500 || analogRead(ss4)>500) {}
-        Serial.println("Button " + String(push) + " up");
-        delay(300);
-        clear_lights();
-        if (sequence[ii] == push)
+        //Serial.println("Button " + String(push) + " down");
+        while (analogRead(ss1) >500 || analogRead(ss2)>500 || analogRead(ss3)>500 || analogRead(ss4)>500) {}//freeze while button is depressed
+        //Serial.println("Button " + String(push) + " up");
+        delay(300);//keep the led on for another 300ms
+        clear_lights();//clear leds
+        if (sequence[ii] == push)//check if pushed button matches value in sequence
           continue;
         else {
-          state = 5;
+          state = 5;//game over
           break;
         }
       }
-      if (state!=5)
+      if (state!=5)//everything was correct, move to the next stage
         stage++;
       
-      if (stage < maxStage && state!=5) {
-        output(none,B01101111,B00001111,none);
+      if (stage < maxStage && state!=5) {//more stages to go, not game over
+        output(none,B01101111,B00001111,none);// :)
         delay(1000);
         state = 1;
       }
-      else if (stage >= maxStage) {
+      else if (stage > maxStage) {//winner!
         state = 4;
         digitalWrite(buzzer,HIGH);
         delay(100);
         digitalWrite(buzzer,LOW);
       }
   }
+  
+  //game win state
   if (state == 4) {
   /*
     output(x,x,x,x);
@@ -252,16 +268,22 @@ void loop() {
     delay(1000);
   }
   
+  //game over state
   if (state == 5) { // you dun goofed
     //output(n,o,p,e);
-    output(none,B01101111,B01100011,none);
+    output(none,B01101111,B01100011,none);// :(
     digitalWrite(buzzer,HIGH);
     delay(500);
     digitalWrite(buzzer,LOW);
     delay(2000);
-    state = 0;
+    state = 0;//return to pending state
   }
-  clear_lights();
+  
+  /**
+  END STATE MACHINE
+  **/
+  
+  clear_lights(); //clear the leds to prevent errors
 }
 
 
