@@ -68,6 +68,24 @@ byte none = B11111111;
 byte all = B00000000;
 byte dot = B11111110;
 
+//INTERNAL VARIABLE INITIALIZATION
+int triggered;//only allow button to be triggered once
+int pos; //cycle position
+int state; //0=default, 1=generate array, 2=playback, 3=user input, 4=finish message, 5=lose message
+int stage; //round number
+int steps; //steps to repeat
+int push;//which button-led pair pushed
+
+
+//GAME SETTINGS
+int maxStage = 10; //maximum rounds
+int extra = 2; //initial steps to start with
+int sequence[200];//memory to allocate for light sequence
+
+
+
+
+
 //outputs 4  predefined chars to each display
 void output(byte a=B11111111,byte b=B11111111, byte c=B11111111, byte d=B11111111) {
   //Shifting from A-H, ie LSB becomes h, MSB becomes A if LSBFIRST (74ls164)
@@ -78,7 +96,8 @@ void output(byte a=B11111111,byte b=B11111111, byte c=B11111111, byte d=B1111111
   shiftOut(data4, clock4, LSBFIRST, d); 
 }
 
-int cycle(int datapin=0,int clockpin=0,int i=0) {//creates a cycle pattern
+//creates a cycle pattern
+int cycle(int datapin=0,int clockpin=0,int i=0) {
   //cycles through each segment A-F
   byte data[6] = {B01111111,B10111111,B11011111,B11101111,B11110111,B11111011};
    shiftOut(datapin, clockpin, LSBFIRST, data[i]);
@@ -87,11 +106,13 @@ int cycle(int datapin=0,int clockpin=0,int i=0) {//creates a cycle pattern
    return i;
 }
 
-int number(int ii=0) {//integer to display
+//display an integer
+int number(int ii=0) {
   byte data[10]={B00000011,B11110011,B00100101,B00001101,B10011001,B01001001,B01000001,B00011111,B00000001,B00011001};//digits 0-9
   return data[ii];
 }
 
+//configure pin outputs
 void setup() {
   pinMode(data1, OUTPUT);
   pinMode(clock1, OUTPUT);
@@ -109,8 +130,7 @@ void setup() {
   randomSeed(analogRead(rndseed)); //take seed from value of light dependent resistor
 }
 
-int triggered;//only allow button to be triggered once
-
+//clear all leds
 void clear_lights() {
   triggered = 0;
   digitalWrite(led1,LOW);
@@ -119,20 +139,7 @@ void clear_lights() {
   digitalWrite(led4,LOW);
 }
 
-//Internal variable initialization
-int pos; //cycle position
-int state; //0=default, 1=generate array, 2=playback, 3=user input, 4=finish message, 5=lose message
-int stage; //round number
-int steps; //steps to repeat
-int push;//which button-led pair pushed
-
-
-//Game Settings
-int maxStage = 10; //maximum rounds
-int extra = 2; //initial steps to start with
-int sequence[200];//memory to allocate for light sequence
-
-
+//state machine loop
 void loop() {
   //check if new game button has been pressed
   if (analogRead(newgame) > 500 && triggered == 0) {
@@ -191,7 +198,7 @@ void loop() {
     output(none,g,o,none);//go
       for (int ii=0; ii<steps; ii++) { //cycle through each step in the sequence array
         triggered = 0;
-        while (triggered == 0){
+        while (triggered == 0){//wait for a button to be pushed
           triggered = 1;//prevent continuous triggering
           if (analogRead(ss1)>500) {
             push = 1;//first button pushed
