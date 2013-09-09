@@ -124,7 +124,7 @@ void setup() {
   pinMode(clock4, OUTPUT);
   pinMode(led1, OUTPUT);
   pinMode(led2, OUTPUT);
-  pinMode(led3, OUTPUT);
+  pinMode(led3, OUTPUT); 
   pinMode(led4, OUTPUT);
   pinMode(buzzer,OUTPUT);
   randomSeed(analogRead(rndseed)); //take seed from value of light dependent resistor
@@ -251,22 +251,6 @@ void loop() {
   
   //game win state
   if (state == 4) {
-  /*
-    output(x,x,x,x);
-    delay(1000);
-    output(w,i,l,l);
-    delay(1000);
-    output(y,o,u);
-    delay(1000);
-    output(g,o,t,o);
-    delay(1000);
-    output(p,r,o,m);
-    delay(1000);
-    output(w,i,t,h);
-    delay(1000);
-    output(none,m,e,none);
-    delay(1000);
-	*/
     output(y,o,u);
     delay(1000);
     output(a,r,e);
