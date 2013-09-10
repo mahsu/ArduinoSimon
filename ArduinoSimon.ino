@@ -184,7 +184,6 @@ void loop() {
     output(r,n,d,number(stage));//rnd <round number>
     delay(1000);
     for (int ii=0; ii<steps; ii++) {
-      //Serial.println("Step " + String(ii+1) + " : " + String(sequence[ii]));
       digitalWrite(sequence[ii]+(led1),HIGH); //sequence ranges 0-3, add that to led1 pin for corresponding led
       delay(800-stage*75);//progressively flash faster each round
       digitalWrite(sequence[ii]+(led1),LOW);
@@ -221,9 +220,7 @@ void loop() {
             break;
           }
         }
-        //Serial.println("Button " + String(push) + " down");
         while (analogRead(ss1) >500 || analogRead(ss2)>500 || analogRead(ss3)>500 || analogRead(ss4)>500) {}//freeze while button is depressed
-        //Serial.println("Button " + String(push) + " up");
         delay(300);//keep the led on for another 300ms
         clear_lights();//clear leds
         if (sequence[ii] == push)//check if pushed button matches value in sequence
