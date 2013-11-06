@@ -16,9 +16,9 @@ The following materials will need to be obtained:
 * 1 - Buzzer
 * 1 - Photoresistor / variable resistor
 * 1 - Arduino
-* 28 - ~220O resistors (for seven segment displays)
-* 4 - ~100O resistors (for LEDs)
-* 5 - ~100kO resistors (for switch pull-down)
+* 28 - ~220ohm resistors (for seven segment displays)
+* 4 - ~100ohm resistors (for LEDs)
+* 5 - ~100kohm resistors (for switch pull-down)
 
 To build the circuit on a breadboard, follow the [schematic](https://github.com/mahsu/ArduinoSimon/blob/master/schematic/arduinosimon.jpg) and sample completed [circuit](https://github.com/mahsu/ArduinoSimon/blob/master/ArduinoSimon.JPG) as reference. Additionally, you may refer to the [Principles of Design: Hardware](#principles-of-design), below. After making sure all pins are connected correctly, you may deploy `ArduinoSimon.ino` to the Arduino or take the steps below to customize the game.
 
@@ -70,9 +70,9 @@ With the IC's notch held to the left, and starting from the bottom going counter
 * Pin 9: Master reset (active low)
 * Pin 14: VCC
 
-The input data pin, either high or low, is the bit that should be shifted into the register at the next rising edge clock pulse. Thankfully, this is all handled by the Arduino using the `shiftOut(data, clock, LSBFIRST, byte);` function. The first and second arguments are the data and clock pins, the third can either be `LSBFIRST` or `MSBFIRST` depending on the wiring (the difference is the order in which a byte is shifted in, either with the most significant bit first or the least significant bit first. This will correspond with how the output pins are wired), and the last argument is the byte to be shifted in, for example `B00010001` is the letter "A". The seven segment displays are wired according to the [standard segment order](http://www.codeproject.com/KB/system/steppermotorcontrol/pic10.jpg) for a common anode display, where segment A is wired to Q0. Do not forget the 220O resistors!
+The input data pin, either high or low, is the bit that should be shifted into the register at the next rising edge clock pulse. Thankfully, this is all handled by the Arduino using the `shiftOut(data, clock, LSBFIRST, byte);` function. The first and second arguments are the data and clock pins, the third can either be `LSBFIRST` or `MSBFIRST` depending on the wiring (the difference is the order in which a byte is shifted in, either with the most significant bit first or the least significant bit first. This will correspond with how the output pins are wired), and the last argument is the byte to be shifted in, for example `B00010001` is the letter "A". The seven segment displays are wired according to the [standard segment order](http://www.codeproject.com/KB/system/steppermotorcontrol/pic10.jpg) for a common anode display, where segment A is wired to Q0. Do not forget the 220ohm resistors!
 
-On the Arduino, digital outputs 8-11 are rather self explanatory, as they are the LEDs for displaying the pattern sequence. As with the displays, do not forget about the 100O resistors. Likewise, the busser is connected between pin 12 and GND.
+On the Arduino, digital outputs 8-11 are rather self explanatory, as they are the LEDs for displaying the pattern sequence. As with the displays, do not forget about the 100ohm resistors. Likewise, the buzzer is connected between pin 12 and GND.
 
 ####Analog Inputs
     //ANALOG PINS
@@ -82,7 +82,7 @@ On the Arduino, digital outputs 8-11 are rather self explanatory, as they are th
     #define ss3 3       //button 3
     #define ss4 4       //button 4 (rightmost)
     #define rndseed 5   //random seed
-Pins 0-4 are technically digital outputs, as they only have a high and low state, but due to insufficient digital pins, they are connected as analog devices. Each of these buttons has a 100kO pull down resistor connecting it to GND to allow the circuit to be pulled to a digital state without a short-circuit, signalling when a button is pressed. Pin 5 is an the input that the game uses for its random seed when the Arduino starts up. Variance in the value of a light dependent resistor is enough to ensure randomness.
+Pins 0-4 are technically digital inputs, as they only have a high and low state, but due to insufficient digital pins, they are connected as analog devices. Each of these buttons has a 100kohm pull down resistor connecting it to GND to allow the circuit to be pulled to a digital state without a short-circuit, signalling when a button is pressed. Pin 5 is an the input that the game uses for its random seed when the Arduino starts up. Variance in the value of a light dependent resistor is enough to ensure randomness.
 
 ###Software
 The software component is run like a state machine.
